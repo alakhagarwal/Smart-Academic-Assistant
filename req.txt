@@ -2,10 +2,30 @@
 langchain  
 langchain-core
 langchain-community
+langchain-experimental 
 
 # OpenAI Integration  
 langchain-groq  
-groq 
+groq
+langchain-OpenAI
+
+# Anthropic Integration  
+langchain-anthropic  
+
+# Google Gemini (PaLM) Integration  
+langchain-google-genai  
+google-generativeai  
+
+# Hugging Face Integration  
+langchain-huggingface  
+transformers  
+huggingface-hub  
+langchain
+faiss-cpu
+sentence-transformers
+tqdm
+numpy
+
 
 # Environment Variable Management  
 python-dotenv  
@@ -20,13 +40,19 @@ streamlit
 #Document loader
 pypdf
 beautifulsoup4
-pdfplumber
-pymupdf
-fitz
-pypdf2
 
 #Vector Stores
 chromadb
 tiktoken
 chroma
 langchain-chroma
+
+#ipynb files
+ipykernel
+
+#retrievers
+wikipedia
+
+youtube_transcript-api
+requests
+pypdf2
