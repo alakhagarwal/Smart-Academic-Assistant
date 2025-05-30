@@ -1,0 +1,32 @@
+# LangChain Core  
+langchain  
+langchain-core
+langchain-community
+
+# OpenAI Integration  
+langchain-groq  
+groq 
+
+# Environment Variable Management  
+python-dotenv  
+
+# Machine Learning Utilities  
+numpy  
+scikit-learn
+
+#Frontend
+streamlit
+
+#Document loader
+pypdf
+beautifulsoup4
+pdfplumber
+pymupdf
+fitz
+pypdf2
+
+#Vector Stores
+chromadb
+tiktoken
+chroma
+langchain-chroma
