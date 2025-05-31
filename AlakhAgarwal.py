@@ -17,8 +17,26 @@ from pydantic  import BaseModel,Field
 from langchain_core.output_parsers import PydanticOutputParser,StrOutputParser
 from langchain_core.tools import tool
 from pydantic import BaseModel, Field
+from langchain.agents import create_react_agent, AgentExecutor
+from langchain import hub #for generating pre defined prompt
 
 load_dotenv()
+
+if "final_summary" not in st.session_state:
+    st.session_state.final_summary = None
+
+# Helper function to generate summary via agent_executor
+def generate_summary_from_chunks():
+    text = get_pdf_text(uploaded_files)
+    chunks = chunk_text(text, max_chars=10000)
+    results = []
+    for chunk in chunks:
+        output = agent_executor.invoke({"input": f"Find the summary of the following text \n{chunk}"})
+        results.append(output["output"])
+    final_summary = "\n".join(results)
+    st.session_state.final_summary = final_summary
+    return final_summary
+
 
 
 
@@ -36,7 +54,7 @@ str_parser = StrOutputParser()
 llm=ChatGroq(model="llama-3.3-70b-versatile")
 
 prompt_for_summary = PromptTemplate(
-    template="Generate a Summary on the following text \n {text}",
+    template="Generate a detailed Summary on the following text \n {text}",
     input_variables=["text"]
 )
 
@@ -46,6 +64,24 @@ summary_chain = prompt_for_summary|llm|str_parser
 def get_summary(text : str) ->str:
     """Generates Summary of the given text"""
     return summary_chain.invoke({"text":text})
+
+# Function to extract text from PDFs
+def get_pdf_text(pdf_docs):
+    text = ""
+    for pdf in pdf_docs:
+        pdf_reader = PdfReader(pdf)
+        for page in pdf_reader.pages:
+            text += page.extract_text()
+    return text
+
+def chunk_text(text, max_chars=10000):
+    chunks = []
+    start = 0
+    while start < len(text):
+        end = start + max_chars
+        chunks.append(text[start:end])
+        start = end
+    return chunks
 
 
 
@@ -83,7 +119,7 @@ def get_topic_wise_explanation(text : str) ->str:
     return topic_chain.invoke({"text":text})
 
 
-def  get_pdf_text(pdf_docs): #we will return a list of documents objects so that we can also preserve the meta data for the strcutured output
+def  get_pdf_docs(pdf_docs): #we will return a list of documents objects so that we can also preserve the meta data for the strcutured output
     docs = []
     for pdf in pdf_docs:
         pdf_reader = PdfReader(pdf)
@@ -118,7 +154,7 @@ if st.button("Get Answer"):
     if not uploaded_files or not question:
         st.warning("Please upload at least one document and enter a question.")
     else:
-        extracted_docs = get_pdf_text(uploaded_files)  
+        extracted_docs = get_pdf_docs(uploaded_files)  
         
         # 2. Split documents using RecursiveCharacterTextSplitter or similar
 
@@ -173,7 +209,6 @@ if st.button("Get Answer"):
         result = chain.invoke({"question":question,"context":retrieved_docs})
 
 
-
         # Example output format (replace this with actual output):
         # response = {
         #     "question": question,
@@ -190,23 +225,58 @@ if st.button("Get Answer"):
 # -------------------- Bonus Section: Agent Tools --------------------
 st.markdown("---")
 st.subheader("🧠 Bonus Tools ( Optional )")
+prompt = hub.pull("hwchase17/react")
 
 col1, col2, col3 = st.columns(3)
 
+agent_prompt = hub.pull("hwchase17/react") 
+
+agent = create_react_agent(
+    llm=llm,
+    tools=[get_summary, get_mcqs,get_topic_wise_explanation],
+    prompt=agent_prompt
+)
+
+agent_executor = AgentExecutor(
+    agent=agent,
+    tools=[get_summary, get_mcqs,get_topic_wise_explanation],
+    verbose=True
+)
+
 with col1:
     if st.button("Summarize Document"):
-        # TODO: Implement SummarizeDocumentTool using LangChain agent
-        st.info("Summary will be shown here.")
+        text = get_pdf_text(uploaded_files)
+        chunks = chunk_text(text, max_chars=10000)  # Split text if too large
+
+        results = []
+        for chunk in chunks:
+            output = agent_executor.invoke({"input": f"Find the summary of the following text \n{chunk}"})
+            results.append(output["output"])
+
+        final_summary = "\n".join(results)
+        st.session_state.final_summary = final_summary  # Store for reuse
+        st.info(final_summary)
 
 with col2:
     if st.button("Generate MCQs"):
-        # TODO: Implement GenerateMCQsTool using LangChain agent
-        st.info("Generated MCQs will appear here.")
+        if not st.session_state.get("final_summary"):
+            generate_summary_from_chunks()
+        
+        output = agent_executor.invoke({
+            "input": f"Generate 5 mcqs on the following text \n{st.session_state.final_summary}"
+        })
+        st.info(output["output"])
 
 with col3:
     if st.button("Topic-wise Explanation"):
-        # TODO: Implement TopicWiseExplanationTool using LangChain agent
-        st.info("Topic-wise explanation will be displayed here.")
+        if not st.session_state.get("final_summary"):
+            generate_summary_from_chunks()
+        
+        output = agent_executor.invoke({
+            "input": f"Generate topic wise explanation of the following text \n{st.session_state.final_summary}"
+        })
+        st.info(output["output"])
+
 
 # -------------------- Footer --------------------
 st.markdown("---")
