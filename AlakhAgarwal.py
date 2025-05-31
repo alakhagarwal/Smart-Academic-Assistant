@@ -25,16 +25,29 @@ load_dotenv()
 if "final_summary" not in st.session_state:
     st.session_state.final_summary = None
 
+#we are using summary  to generate mcq and explanation bcoz otherwise it will exceed llm imput token limit
+# we are storing it in session state so that we dont need to generate it again and again as it wil take time
+
 # Helper function to generate summary via agent_executor
+
+def chunk_text(text, max_chars=10000):   #The function chunk_text breaks a big text into smaller parts so bcoz the model cannot process large text at once
+    chunks = []
+    start = 0
+    while start < len(text):
+        end = start + max_chars
+        chunks.append(text[start:end])
+        start = end
+    return chunks
+
 def generate_summary_from_chunks():
     text = get_pdf_text(uploaded_files)
-    chunks = chunk_text(text, max_chars=10000)
+    chunks = chunk_text(text, max_chars=10000) #list of text divided into small chunks
     results = []
     for chunk in chunks:
-        output = agent_executor.invoke({"input": f"Find the summary of the following text \n{chunk}"})
+        output = get_summary.invoke({"input": f"Find the summary of the following text \n{chunk}"}) #we call agent for each chunk
         results.append(output["output"])
-    final_summary = "\n".join(results)
-    st.session_state.final_summary = final_summary
+    final_summary = "\n".join(results)  #combine all the summary of chunks
+    st.session_state.final_summary = final_summary #storing it in session state for further reuse
     return final_summary
 
 
@@ -51,7 +64,7 @@ parser = PydanticOutputParser(pydantic_object=QAResponse)
 
 str_parser = StrOutputParser()
 
-llm=ChatGroq(model="llama-3.3-70b-versatile")
+llm=ChatGroq(model="llama3-8b-8192")
 
 prompt_for_summary = PromptTemplate(
     template="Generate a detailed Summary on the following text \n {text}",
@@ -73,17 +86,6 @@ def get_pdf_text(pdf_docs):
         for page in pdf_reader.pages:
             text += page.extract_text()
     return text
-
-def chunk_text(text, max_chars=10000):
-    chunks = []
-    start = 0
-    while start < len(text):
-        end = start + max_chars
-        chunks.append(text[start:end])
-        start = end
-    return chunks
-
-
 
 prompt_for_mcqs = PromptTemplate(
     template=(
@@ -229,20 +231,6 @@ prompt = hub.pull("hwchase17/react")
 
 col1, col2, col3 = st.columns(3)
 
-agent_prompt = hub.pull("hwchase17/react") 
-
-agent = create_react_agent(
-    llm=llm,
-    tools=[get_summary, get_mcqs,get_topic_wise_explanation],
-    prompt=agent_prompt
-)
-
-agent_executor = AgentExecutor(
-    agent=agent,
-    tools=[get_summary, get_mcqs,get_topic_wise_explanation],
-    verbose=True
-)
-
 with col1:
     if st.button("Summarize Document"):
         text = get_pdf_text(uploaded_files)
@@ -250,8 +238,8 @@ with col1:
 
         results = []
         for chunk in chunks:
-            output = agent_executor.invoke({"input": f"Find the summary of the following text \n{chunk}"})
-            results.append(output["output"])
+           output = get_summary.invoke({"text": chunk})
+           results.append(output)
 
         final_summary = "\n".join(results)
         st.session_state.final_summary = final_summary  # Store for reuse
@@ -262,20 +250,17 @@ with col2:
         if not st.session_state.get("final_summary"):
             generate_summary_from_chunks()
         
-        output = agent_executor.invoke({
-            "input": f"Generate 5 mcqs on the following text \n{st.session_state.final_summary}"
-        })
-        st.info(output["output"])
+        output = get_mcqs.invoke({"text": st.session_state.final_summary})
+        st.info(output)
 
 with col3:
     if st.button("Topic-wise Explanation"):
         if not st.session_state.get("final_summary"):
-            generate_summary_from_chunks()
-        
-        output = agent_executor.invoke({
-            "input": f"Generate topic wise explanation of the following text \n{st.session_state.final_summary}"
-        })
-        st.info(output["output"])
+            generate_summary_from_chunks()                #we are using summary  to generate mcq and explanation bcoz otherwise it will exceed llm imput token limit
+                                                          # we are storing it in session state so that we dont need to generate it again and again as it wil take time
+        input = f"Use only the `get_topic_wise_explanation` tool to explain the following text by topic:\n\n{st.session_state.final_summary}"
+        output = get_topic_wise_explanation.invoke({"text": st.session_state.final_summary})
+        st.info(output)
 
 
 # -------------------- Footer --------------------
