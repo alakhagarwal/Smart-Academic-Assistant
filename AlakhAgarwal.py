@@ -14,11 +14,13 @@ from langchain_community.vectorstores import FAISS
 from langchain_core.prompts import PromptTemplate
 from dotenv import load_dotenv
 from pydantic  import BaseModel,Field
-from langchain_core.output_parsers import PydanticOutputParser
+from langchain_core.output_parsers import PydanticOutputParser,StrOutputParser
+from langchain_core.tools import tool
+from pydantic import BaseModel, Field
 
 load_dotenv()
 
-from pydantic import BaseModel, Field
+
 
 class QAResponse(BaseModel):
     question: str = Field(description="The academic question asked by the user")
@@ -28,6 +30,57 @@ class QAResponse(BaseModel):
 
 
 parser = PydanticOutputParser(pydantic_object=QAResponse)
+
+str_parser = StrOutputParser()
+
+llm=ChatGroq(model="llama-3.3-70b-versatile")
+
+prompt_for_summary = PromptTemplate(
+    template="Generate a Summary on the following text \n {text}",
+    input_variables=["text"]
+)
+
+summary_chain = prompt_for_summary|llm|str_parser
+
+@tool
+def get_summary(text : str) ->str:
+    """Generates Summary of the given text"""
+    return summary_chain.invoke({"text":text})
+
+
+
+prompt_for_mcqs = PromptTemplate(
+    template=(
+        "Based on the following academic content, first create a concise summary, "
+        "then generate 5 multiple choice questions (MCQs) from it.\n\n"
+        "Text:\n{text}\n\n"
+        "Format:\n1. Question?\n    A. Option 1\n    B. Option 2\n    C. Option 3\n    D. Option 4\nAnswer: X"
+    ),
+    input_variables=["text"]
+)
+
+mcq_chain = prompt_for_mcqs|llm|str_parser
+
+@tool
+def get_mcqs(text : str) ->str:
+    """Generates 5 most important mcqs by generating the summary of the given text"""
+    return mcq_chain.invoke({"text":text})
+
+prompt_for_topic_wise = PromptTemplate(
+    template= ("Based on the following academic content, identify key topics and explain each one clearly "
+        "with relevant examples if possible.\n\n"
+        "Content:\n{text}\n\n"
+        "Format:\n\n"
+        "1. Topic Name:\nExplanation...\nExample (if applicable)...\n"),
+    input_variables=["text"]
+)
+
+topic_chain = prompt_for_topic_wise|llm|str_parser
+
+@tool
+def get_topic_wise_explanation(text : str) ->str:
+    """Generates topic wise explanation of the following text"""
+    return topic_chain.invoke({"text":text})
 
 
 def  get_pdf_text(pdf_docs): #we will return a list of documents objects so that we can also preserve the meta data for the strcutured output
@@ -89,16 +142,17 @@ if st.button("Get Answer"):
 
         # 4. Retrieve relevant chunks based on the question
 
-        retriever = vector_store.as_retriever(search_type="similarity", search_kwargs={"k": 3})
+        retriever = vector_store.as_retriever(search_type="similarity", search_kwargs={"k": 4})
         retrieved_docs    = retriever.invoke(question) #gets three most relevant documents
 
         # 5. Use Groq-hosted LLM via LangChain (e.g., Mixtral, Gemma, Llama3)
-        llm=ChatGroq(model="llama-3.3-70b-versatile")
+        # Model declared above 
 
         prompt = PromptTemplate(
         template="""
         You are a helpful assistant.
-        Answer ONLY from the provided transcript context.
+        Answer ONLY from the provided context.
+        Read the full context thoroughly and answer in detail if required.
         If the context is insufficient, just say you don't know.
 
         Context: {context}
