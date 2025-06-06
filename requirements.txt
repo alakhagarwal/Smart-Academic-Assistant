@@ -1,53 +1,47 @@
 # LangChain Core  
-langchain  
+langchain
 langchain-core
 langchain-community
-langchain-experimental 
+langchain-experimental
 
-# OpenAI Integration  
-langchain-groq  
+# LangChain Groq (from GitHub — not available on PyPI!)
+git+https://github.com/langchain-ai/langchain-groq.git
+
+# Groq API support
 groq
-
 
 # Hugging Face Integration  
 langchain-huggingface  
 transformers  
 huggingface-hub  
-langchain
-faiss-cpu
-sentence-transformers
-tqdm
-numpy
+sentence-transformers  
+faiss-cpu  
 
+# Utilities  
+tqdm  
+numpy  
+scikit-learn  
+requests  
 
 # Environment Variable Management  
 python-dotenv  
 
-# Machine Learning Utilities  
-numpy  
-scikit-learn
+# Streamlit Frontend  
+streamlit  
 
-#Frontend
-streamlit
+# Document Loaders  
+pypdf  
+PyPDF2  
+beautifulsoup4  
 
-#Document loader
-pypdf
-beautifulsoup4
+# Vector Stores  
+chromadb  
+tiktoken  
+langchain-chroma  
 
-#Vector Stores
-chromadb
-tiktoken
-chroma
-langchain-chroma
+# Extra tools  
+wikipedia  
+youtube-transcript-api  
 
-#ipynb files
-ipykernel
-
-#retrievers
-wikipedia
-
-youtube_transcript-api
-requests
-pypdf2
-
-
+# Jupyter Notebook Support  
+ipykernel  
