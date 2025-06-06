@@ -12,7 +12,6 @@ from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_core.prompts import PromptTemplate
-from dotenv import load_dotenv
 from pydantic  import BaseModel,Field
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.tools import tool
@@ -20,7 +19,6 @@ from pydantic import BaseModel, Field
 from langchain import hub
 from PIL import Image
 
-load_dotenv()
 st.set_page_config(page_title="Your Study-Buddy", layout="centered")
 
 st.sidebar.image("logo3.png",width=200)
@@ -73,7 +71,7 @@ temp = st.sidebar.slider("Temperature", min_value=0.0, max_value=1.0, value=0.7,
 
 tokens = st.sidebar.slider("Max Tokens",100,1000,900)
 
-llm=ChatGroq(model=mod,temperature=temp,max_tokens=tokens)
+llm=ChatGroq(model=mod,temperature=temp,max_tokens=tokens,api_key=st.secrets["GROQ"]["api_key"])
 
 prompt_for_summary = PromptTemplate(
     template="Generate a detailed Summary on the following text \n {text}",
