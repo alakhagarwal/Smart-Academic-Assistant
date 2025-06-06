@@ -71,7 +71,7 @@ temp = st.sidebar.slider("Temperature", min_value=0.0, max_value=1.0, value=0.7,
 
 tokens = st.sidebar.slider("Max Tokens",100,1000,900)
 
-llm=ChatGroq(model=mod,temperature=temp,max_tokens=tokens,api_key=st.secrets["api_key"])
+llm=ChatGroq(model=mod,temperature=temp,max_tokens=tokens,api_key=st.secrets["GROQ_API_KEY"])
 
 prompt_for_summary = PromptTemplate(
     template="Generate a detailed Summary on the following text \n {text}",
