@@ -57,3 +57,7 @@ youtube_transcript-api
 requests
 pypdf2
 git+https://github.com/langchain-ai/langchain-groq.git
+
+streamlit>=1.32.0
+langchain>=0.1.0
+langchain-groq>=0.1.0  # ← This is the critical fix
