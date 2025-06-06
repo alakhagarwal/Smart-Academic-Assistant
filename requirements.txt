@@ -7,14 +7,7 @@ langchain-experimental
 # OpenAI Integration  
 langchain-groq  
 groq
-langchain-OpenAI
 
-# Anthropic Integration  
-langchain-anthropic  
-
-# Google Gemini (PaLM) Integration  
-langchain-google-genai  
-google-generativeai  
 
 # Hugging Face Integration  
 langchain-huggingface  
@@ -56,5 +49,5 @@ wikipedia
 youtube_transcript-api
 requests
 pypdf2
-https://github.com/langchain-ai/langchain-groq
+
 
