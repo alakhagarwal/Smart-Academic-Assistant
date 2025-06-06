@@ -56,4 +56,4 @@ wikipedia
 youtube_transcript-api
 requests
 pypdf2
-git+https://github.com/alakhagarwal/langchain-groq.git
+git+https://github.com/langchain-ai/langchain-groq.git
