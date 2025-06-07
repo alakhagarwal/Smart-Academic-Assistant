@@ -4,9 +4,6 @@ langchain-core
 langchain-community
 langchain-experimental
 
-# LangChain Groq (from GitHub — not available on PyPI!)
-git+https://github.com/langchain-ai/langchain-groq.git
-
 # Groq API support
 langchain-groq
 groq
